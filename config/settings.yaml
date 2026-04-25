@@ -1,0 +1,73 @@
+# MCIS Configuration
+# Global settings for Maritime Conflict Intelligence System
+
+data:
+  raw_dir: "./data/raw"
+  processed_dir: "./data/processed"
+  external_dir: "./data/external"
+  
+preprocessing:
+  seed: 42
+  min_mmsi: 200000000
+  max_mmsi: 799999999
+  invalid_lat: 91.0
+  invalid_lon: 181.0
+  invalid_sog: 102.3
+  invalid_cog: 360.0
+  invalid_heading: 511
+  timestamp_cutoff: "2010-01-01"
+
+features:
+  grid_resolution: 0.5  # degrees
+  time_bucket: "6h"       # 6-hour aggregation
+  rolling_window: "12h"
+  dark_ship_threshold_seconds: 21600  # 6 hours
+
+conflict_zones:
+  black_sea:
+    bbox: [27.0, 40.5, 41.0, 46.8]
+    conflict: "ukraine_war"
+  azov_sea:
+    bbox: [33.5, 45.0, 39.5, 47.5]
+    conflict: "ukraine_war"
+  red_sea:
+    bbox: [32.0, 12.0, 43.5, 30.0]
+    conflict: "houthi_crisis"
+  taiwan_strait:
+    bbox: [119.0, 22.0, 122.0, 26.0]
+    conflict: "taiwan_tension"
+  strait_hormuz:
+    bbox: [56.0, 25.5, 59.5, 27.0]
+    conflict: "iran_tension"
+
+chokepoints:
+  hormuz: [56.5, 26.5]
+  malacca: [103.8, 1.2]
+  bab_mandeb: [43.4, 12.5]
+  suez: [32.5, 30.7]
+  panama: [-79.9, 9.0]
+  gibraltar: [-5.4, 36.0]
+  dover: [1.3, 51.0]
+
+models:
+  anomaly:
+    contamination: 0.05
+    n_estimators: 100
+    n_neighbors: 20
+  prediction:
+    test_size: 0.2
+    n_estimators: 100
+    max_depth: 10
+
+visualization:
+  dpi: 300
+  figsize: [10, 6]
+  font_family: "DejaVu Sans"
+  font_size: 12
+  style: "whitegrid"
+
+outputs:
+  figures_dir: "./outputs/figures"
+  tables_dir: "./outputs/tables"
+  models_dir: "./outputs/models"
+  reports_dir: "./outputs/reports"
