@@ -1,0 +1,50 @@
+# MCIS Requirements
+# Maritime Conflict Intelligence System
+
+# Core Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.11.0
+pyarrow>=12.0.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+joblib>=1.3.0
+
+# Statistical Analysis
+statsmodels>=0.14.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+folium>=0.14.0
+plotly>=5.15.0
+
+# Configuration
+pyyaml>=6.0
+
+# Jupyter (optional)
+jupyter>=1.0.0
+nbformat>=5.10.0
+nbconvert>=7.0.0
+
+# testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# geopandas (optional, for advanced geo features)
+# geopandas>=0.13.0
+# shapely>=2.0.0
+
+# deep learning (optional, for LSTM/Transformer models)
+# torch>=2.0.0
+
+# xgboost/lightgbm (optional, for advanced models)
+# xgboost>=1.7.0
+# lightgbm>=4.0.0
+
+# imbalanced-learn (optional, for class imbalance handling)
+# imbalanced-learn>=0.11.0
+
+# prophet (optional, for time series forecasting)
+# prophet>=1.1.4
