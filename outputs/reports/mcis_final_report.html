@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MCIS Final Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; }
+        h2 { color: #34495e; margin-top: 30px; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; }
+        .timestamp { color: #7f8c8d; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h1>Maritime Conflict Intelligence System</h1>
+    <p class="timestamp">Generated: 2026-04-25 23:37:43</p>
+    
+    <h2>Data Summary</h2>
+    <pre>
+## Data Summary
+----------------------------------------
+Cleaned records: 499
+Cleaned columns: 19
+Feature records: 499
+Feature columns: 48</pre>
+    
+    <h2>Visualizations</h2>
+    <pre>
+## Visualizations
+----------------------------------------
+eda: 6 figures
+spatial: 3 figures
+temporal: 5 figures
+statistical: 5 figures</pre>
+    
+    <h2>Models</h2>
+    <pre>
+## Models
+----------------------------------------
+anomaly: 2 models
+predictor: 4 models
+
+Prediction Results:
+  0: AUROC=1.000, F1=1.000
+  1: AUROC=1.000, F1=1.000
+  2: AUROC=1.000, F1=0.880</pre>
+    
+    <h2>Analysis Results</h2>
+    <pre>
+## Analysis Results
+----------------------------------------
+Analysis tables: 0</pre>
+    
+    <h2>Pipeline Summary</h2>
+    <ol>
+        <li>Data Cleaning: ais_raw.csv ¡æ ais_clean.parquet</li>
+        <li>Feature Engineering: ais_clean.parquet ¡æ ais_features.parquet</li>
+        <li>EDA: outputs/figures/eda/</li>
+        <li>Spatial Visualization: outputs/figures/spatial/</li>
+        <li>Temporal Visualization: outputs/figures/temporal/</li>
+        <li>Statistical Visualization: outputs/figures/statistical/</li>
+        <li>Anomaly Detection: outputs/models/anomaly/</li>
+        <li>Conflict Prediction: outputs/models/predictor/</li>
+    </ol>
+</body>
+</html>
