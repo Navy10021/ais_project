@@ -197,14 +197,17 @@ class AISFeatureEngineer:
             df["in_conflict_zone"]
         ).astype("int8")
 
-        cog_sign = np.sign(df["delta_cog"].fillna(0).values)
         df["zig_zag_index"] = (
             df.groupby("MMSI")["delta_cog"]
             .transform(
                 lambda x: (
                     np.sign(x.fillna(0).values) != np.sign(x.shift().fillna(0).values)
                 ).astype(int)
-            ).rolling(10, min_periods=3).sum()
+            )
+            .groupby(df["MMSI"])
+            .rolling(10, min_periods=3)
+            .sum()
+            .reset_index(level=0, drop=True)
         )
 
         return df
@@ -263,12 +266,11 @@ class AISFeatureEngineer:
                 if not zone_mask.any():
                     continue
 
-                event_date = ev["event_date"]
+                event_date = pd.Timestamp(ev["event_date"])
                 if event_date.tzinfo is None:
                     event_date = event_date.tz_localize("UTC")
 
-                dt_naive = df["BaseDateTime"].dt.tz_localize(None)
-                day_diff = (event_date - dt_naive).dt.days
+                day_diff = (event_date - df["BaseDateTime"]).dt.days
 
                 match = zone_mask & (day_diff >= -7) & (day_diff <= 30)
                 df.loc[match, "conflict_label"] = 1

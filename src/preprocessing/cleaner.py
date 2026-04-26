@@ -103,6 +103,28 @@ class AISCleaner:
         self.report: Dict[str, int] = {}
         self.config = config or CleanerConfig()
 
+
+    # Backward-compatible aliases used by existing tests/integrations
+    @property
+    def INVALID_LAT(self) -> float:
+        return self.config.invalid_lat
+
+    @property
+    def INVALID_LON(self) -> float:
+        return self.config.invalid_lon
+
+    @property
+    def INVALID_SOG(self) -> float:
+        return self.config.invalid_sog
+
+    @property
+    def INVALID_COG(self) -> float:
+        return self.config.invalid_cog
+
+    @property
+    def INVALID_HEADING(self) -> int:
+        return self.config.invalid_heading
+
     def load(self) -> pd.DataFrame:
         if self.input_path.suffix == ".parquet":
             return pd.read_parquet(self.input_path)
@@ -126,7 +148,10 @@ class AISCleaner:
 
         df["mmsi_special_type"] = special_types
 
-        valid_mask = (mmsi >= self.config.min_mmsi) & (mmsi <= self.config.max_mmsi)
+        valid_mask = (
+            ((mmsi >= self.config.min_mmsi) & (mmsi <= self.config.max_mmsi))
+            | pd.notna(special_types)
+        )
         df = df[valid_mask].copy()
         self.report["mmsi_removed"] = n - len(df)
 
