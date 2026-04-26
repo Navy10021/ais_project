@@ -1,0 +1,1 @@
+sample = df.sample(n=50000, random_state=42)\nprint(" ok\)\n
