@@ -2,14 +2,14 @@
 Maritime Conflict Intelligence System (MCIS)
 Final Analysis Report
 ============================================================
-Generated: 2026-04-26 11:05:05
+Generated: 2026-04-26 11:52:58
 
 
 ## Data Summary
 ----------------------------------------
-Cleaned records: 499
+Cleaned records: 7,152,294
 Cleaned columns: 19
-Feature records: 499
+Feature records: 7,152,294
 Feature columns: 48
 
 ## Visualizations
