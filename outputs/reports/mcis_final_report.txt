@@ -2,7 +2,7 @@
 Maritime Conflict Intelligence System (MCIS)
 Final Analysis Report
 ============================================================
-Generated: 2026-04-25 23:37:43
+Generated: 2026-04-26 11:05:05
 
 
 ## Data Summary
@@ -14,21 +14,22 @@ Feature columns: 48
 
 ## Visualizations
 ----------------------------------------
-eda: 6 figures
-spatial: 3 figures
+eda: 7 figures
+spatial: 4 figures
 temporal: 5 figures
-statistical: 5 figures
+statistical: 6 figures
 
 ## Models
 ----------------------------------------
-anomaly: 2 models
+anomaly: 3 models
 predictor: 4 models
 
 Prediction Results:
   0: AUROC=1.000, F1=1.000
   1: AUROC=1.000, F1=1.000
   2: AUROC=1.000, F1=0.880
+  3: AUROC=nan, F1=nan
 
 ## Analysis Results
 ----------------------------------------
-Analysis tables: 0
+Analysis tables: 3

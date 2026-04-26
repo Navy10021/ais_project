@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -13,7 +12,7 @@
 </head>
 <body>
     <h1>Maritime Conflict Intelligence System</h1>
-    <p class="timestamp">Generated: 2026-04-25 23:37:43</p>
+    <p class="timestamp">Generated: 2026-04-26 11:05:05</p>
     
     <h2>Data Summary</h2>
     <pre>
@@ -28,33 +27,34 @@ Feature columns: 48</pre>
     <pre>
 ## Visualizations
 ----------------------------------------
-eda: 6 figures
-spatial: 3 figures
+eda: 7 figures
+spatial: 4 figures
 temporal: 5 figures
-statistical: 5 figures</pre>
+statistical: 6 figures</pre>
     
     <h2>Models</h2>
     <pre>
 ## Models
 ----------------------------------------
-anomaly: 2 models
+anomaly: 3 models
 predictor: 4 models
 
 Prediction Results:
   0: AUROC=1.000, F1=1.000
   1: AUROC=1.000, F1=1.000
-  2: AUROC=1.000, F1=0.880</pre>
+  2: AUROC=1.000, F1=0.880
+  3: AUROC=nan, F1=nan</pre>
     
     <h2>Analysis Results</h2>
     <pre>
 ## Analysis Results
 ----------------------------------------
-Analysis tables: 0</pre>
+Analysis tables: 3</pre>
     
     <h2>Pipeline Summary</h2>
     <ol>
-        <li>Data Cleaning: ais_raw.csv ¡æ ais_clean.parquet</li>
-        <li>Feature Engineering: ais_clean.parquet ¡æ ais_features.parquet</li>
+        <li>Data Cleaning: ais_raw.csv â†’ ais_clean.parquet</li>
+        <li>Feature Engineering: ais_clean.parquet â†’ ais_features.parquet</li>
         <li>EDA: outputs/figures/eda/</li>
         <li>Spatial Visualization: outputs/figures/spatial/</li>
         <li>Temporal Visualization: outputs/figures/temporal/</li>

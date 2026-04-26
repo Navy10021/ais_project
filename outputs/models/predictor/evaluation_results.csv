@@ -1,4 +1,5 @@
-,auroc,auprc,f1,accuracy,tn,fp,fn,tp
-random_forest,1.0,1.0,1.0,1.0,89.0,0.0,0.0,11.0
-gradient_boosting,1.0,1.0,1.0,1.0,89.0,0.0,0.0,11.0
-logistic_regression,1.0,1.0,0.88,0.97,86.0,3.0,0.0,11.0
+,auroc,auprc,f1,f2,precision,recall,accuracy,tn,fp,fn,tp,random_forest,gradient_boosting,logistic_regression
+random_forest,1.0,1.0,1.0,0.99999999998,1.0,1.0,1.0,89.0,0.0,0.0,11.0,,,
+gradient_boosting,1.0,1.0,1.0,0.99999999998,1.0,1.0,1.0,89.0,0.0,0.0,11.0,,,
+logistic_regression,1.0,1.0,0.88,0.9482758620460762,0.7857142857142857,1.0,0.97,86.0,3.0,0.0,11.0,,,
+cv,,,,,,,,,,,,"{'cv_mean': np.float64(1.0), 'cv_std': np.float64(0.0)}","{'cv_mean': np.float64(1.0), 'cv_std': np.float64(0.0)}","{'cv_mean': np.float64(1.0), 'cv_std': np.float64(0.0)}"
