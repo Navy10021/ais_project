@@ -4,12 +4,8 @@ Tests for AIS Feature Engineer
 import pytest
 import pandas as pd
 import numpy as np
-from pathlib import Path
-import sys
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-from src.preprocessing.feature_engineer import AISFeatureEngineer
+from src.preprocessing.feature_engineer import AISFeatureEngineer, load_config
 
 
 @pytest.fixture
@@ -32,6 +28,14 @@ def sample_clean_data():
 
 
 class TestAISFeatureEngineer:
+    def test_config_driven_metadata_loaded(self):
+        config = load_config("./config/settings.yaml")
+        engineer = AISFeatureEngineer(config)
+
+        assert "black_sea" in engineer.conflict_zones
+        assert "hormuz" in engineer.chokepoints
+        assert 70 in engineer.vessel_type_cargo and 79 in engineer.vessel_type_cargo
+
     def test_kinematic_features(self, sample_clean_data):
         engineer = AISFeatureEngineer()
         result = engineer.add_kinematic_features(sample_clean_data.copy())
@@ -56,7 +60,7 @@ class TestAISFeatureEngineer:
         engineer = AISFeatureEngineer()
         result = engineer.add_geospatial_features(sample_clean_data.copy())
 
-        assert result["conflict_zone_name"].isin(engineer.CONFLICT_ZONES.keys()).any() or (
+        assert result["conflict_zone_name"].isin(engineer.conflict_zones.keys()).any() or (
             result["conflict_zone_name"] == "none"
         ).all()
 
