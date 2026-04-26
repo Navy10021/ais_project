@@ -5,6 +5,7 @@ data:
   raw_dir: "./data/raw"
   processed_dir: "./data/processed"
   external_dir: "./data/external"
+  conflict_events: "./data/processed/conflict_events.csv"
   
 preprocessing:
   seed: 42
@@ -15,6 +16,7 @@ preprocessing:
   invalid_sog: 102.3
   invalid_cog: 360.0
   invalid_heading: 511
+  invalid_imo: "IMO0000000"
   timestamp_cutoff: "2010-01-01"
 
 features:
@@ -27,18 +29,35 @@ conflict_zones:
   black_sea:
     bbox: [27.0, 40.5, 41.0, 46.8]
     conflict: "ukraine_war"
+    onset: "2022-02-24"
   azov_sea:
     bbox: [33.5, 45.0, 39.5, 47.5]
     conflict: "ukraine_war"
+    onset: "2022-02-24"
+  kerch_strait:
+    bbox: [36.4, 45.1, 36.8, 45.5]
+    conflict: "ukraine_war"
+    onset: "2022-02-24"
   red_sea:
     bbox: [32.0, 12.0, 43.5, 30.0]
     conflict: "houthi_crisis"
+    onset: "2023-11-19"
+  bab_el_mandeb:
+    bbox: [43.0, 11.5, 45.0, 12.5]
+    conflict: "houthi_crisis"
+    onset: "2023-11-19"
   taiwan_strait:
     bbox: [119.0, 22.0, 122.0, 26.0]
     conflict: "taiwan_tension"
+    onset: "2022-08-04"
+  south_china_sea:
+    bbox: [109.0, 3.0, 121.0, 22.0]
+    conflict: "scs_dispute"
+    onset: "2022-01-01"
   strait_hormuz:
     bbox: [56.0, 25.5, 59.5, 27.0]
     conflict: "iran_tension"
+    onset: "2022-01-01"
 
 chokepoints:
   hormuz: [56.5, 26.5]
@@ -49,15 +68,27 @@ chokepoints:
   gibraltar: [-5.4, 36.0]
   dover: [1.3, 51.0]
 
+vessel_types:
+  military: 35
+  sar: 51
+  cargo: [70, 79]
+  tanker: [80, 89]
+  fishing: [30, 31, 32]
+  passenger: 60
+  tug: 52
+  law_enforcement: 55
+
 models:
   anomaly:
     contamination: 0.05
     n_estimators: 100
     n_neighbors: 20
+    random_state: 42
   prediction:
     test_size: 0.2
     n_estimators: 100
     max_depth: 10
+    random_state: 42
 
 visualization:
   dpi: 300
