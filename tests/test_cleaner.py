@@ -5,10 +5,6 @@ Tests for AIS Cleaner
 import pytest
 import pandas as pd
 import numpy as np
-from pathlib import Path
-import sys
-
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from src.preprocessing.cleaner import AISCleaner
 
@@ -49,7 +45,8 @@ class TestAISCleaner:
         result = cleaner.clean_mmsi(sample_ais_data.copy())
 
         assert len(result) <= len(sample_ais_data)
-        assert result["MMSI"].between(200_000_000, 799_999_999).all()
+        in_civilian_range = result["MMSI"].between(200_000_000, 799_999_999)
+        assert (in_civilian_range | result["mmsi_special_type"].notna()).all()
         assert "mmsi_special_type" in result.columns
 
     def test_clean_coordinates_filters_invalid(self, sample_ais_data):
@@ -82,13 +79,12 @@ class TestAISCleaner:
     def test_special_mmsi_detection(self, sample_ais_data):
         cleaner = AISCleaner("dummy_input.csv", "dummy_output.parquet")
         sample = sample_ais_data.copy()
-        
-        sample.loc[sample["MMSI"] == 975_000_000, "MMSI"] = 975_000_000
-        sample.loc[sample["MMSI"] == 111_000_000, "MMSI"] = 111_000_000
-        sample.loc[sample["MMSI"] == 990_000_000, "MMSI"] = 990_000_000
-        
-        result = sample.copy()
-        cleaner.clean_mmsi(result)
-        
+
+        sample.loc[0, "MMSI"] = 975_000_000
+        sample.loc[1, "MMSI"] = 111_000_000
+        sample.loc[2, "MMSI"] = 990_000_000
+
+        result = cleaner.clean_mmsi(sample)
+
         has_special = result["mmsi_special_type"].notna()
         assert has_special.any(), "Special MMSI types should be detected in data"
