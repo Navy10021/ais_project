@@ -40,13 +40,13 @@ MCIS analyzes Automatic Identification System (AIS) data to uncover statisticall
 ## Architecture
 
 ```
-                        ┌─────────────────────────────────┐
+                        ┌──────────────────────────────────┐
                         │         AIS Raw Data             │
                         │  (MMSI · Position · Speed · COG) │
-                        └────────────────┬────────────────┘
+                        └────────────────┬─────────────────┘
                                          │
                         ┌────────────────▼────────────────┐
-                        │        Preprocessing             │
+                        │        Preprocessing            │
                         │  cleaner.py · feature_engineer  │
                         └────────────────┬────────────────┘
                                          │
@@ -61,7 +61,7 @@ MCIS analyzes Automatic Identification System (AIS) data to uncover statisticall
               └──────────────────────────┼──────────────────────────┘
                                          │
                         ┌────────────────▼────────────────┐
-                        │     Correlation Analysis         │
+                        │     Correlation Analysis        │
                         │  Granger · DiD · ITS · Event    │
                         └────────────────┬────────────────┘
                                          │
@@ -69,12 +69,12 @@ MCIS analyzes Automatic Identification System (AIS) data to uncover statisticall
                     │                    │                    │
         ┌───────────▼──────────┐  ┌─────▼──────────┐  ┌──────▼──────────────┐
         │   Anomaly Detection  │  │ Conflict Pred. │  │    Visualization    │
-        │  IsoForest·LOF·DBSCAN│  │  RF·GBM·XGBoost│  │ spatial·temporal   │
+        │  IsoForest·LOF·DBSCAN│  │  RF·GBM·XGBoost│  │ spatial·temporal    │
         └──────────────────────┘  └────────────────┘  └─────────────────────┘
                                          │
                         ┌────────────────▼────────────────┐
-                        │       MCIS Final Report          │
-                        │    HTML · CSV · Figures          │
+                        │       MCIS Final Report         │
+                        │    HTML · CSV · Figures         │
                         └─────────────────────────────────┘
 ```
 
