@@ -24,7 +24,7 @@ import logging
 import argparse
 import yaml
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,7 @@ def load_config(config_path: str = "./config/settings.yaml") -> CleanerConfig:
             invalid_sog=pp.get("invalid_sog", 102.3),
             invalid_cog=pp.get("invalid_cog", 360.0),
             invalid_heading=pp.get("invalid_heading", 511),
+            invalid_imo=pp.get("invalid_imo", "IMO0000000"),
             timestamp_cutoff=pp.get("timestamp_cutoff", "2010-01-01"),
         )
     except Exception:
@@ -68,6 +69,12 @@ def load_config(config_path: str = "./config/settings.yaml") -> CleanerConfig:
 
 
 class AISCleaner:
+    REQUIRED_COLUMNS = {
+        "MMSI", "BaseDateTime", "LAT", "LON", "SOG", "COG", "Heading",
+        "VesselName", "IMO", "CallSign", "VesselType", "Status",
+        "Length", "Width", "Draft", "Cargo", "TransceiverClass",
+    }
+
     DTYPE_MAP = {
         "MMSI": "int64",
         "LAT": "float32",
@@ -103,15 +110,46 @@ class AISCleaner:
         self.report: Dict[str, int] = {}
         self.config = config or CleanerConfig()
 
+
+    # Backward-compatible aliases used by existing tests/integrations
+    @property
+    def INVALID_LAT(self) -> float:
+        return self.config.invalid_lat
+
+    @property
+    def INVALID_LON(self) -> float:
+        return self.config.invalid_lon
+
+    @property
+    def INVALID_SOG(self) -> float:
+        return self.config.invalid_sog
+
+    @property
+    def INVALID_COG(self) -> float:
+        return self.config.invalid_cog
+
+    @property
+    def INVALID_HEADING(self) -> int:
+        return self.config.invalid_heading
+
     def load(self) -> pd.DataFrame:
         if self.input_path.suffix == ".parquet":
-            return pd.read_parquet(self.input_path)
-        return pd.read_csv(
+            df = pd.read_parquet(self.input_path)
+            self._validate_columns(df)
+            return df
+        df = pd.read_csv(
             self.input_path,
             dtype=self.DTYPE_MAP,
             parse_dates=["BaseDateTime"],
             low_memory=False,
         )
+        self._validate_columns(df)
+        return df
+
+    def _validate_columns(self, df: pd.DataFrame) -> None:
+        missing = sorted(self.REQUIRED_COLUMNS.difference(df.columns))
+        if missing:
+            raise ValueError(f"Missing required AIS columns: {missing}")
 
     def clean_mmsi(self, df: pd.DataFrame) -> pd.DataFrame:
         n = len(df)
@@ -126,7 +164,10 @@ class AISCleaner:
 
         df["mmsi_special_type"] = special_types
 
-        valid_mask = (mmsi >= self.config.min_mmsi) & (mmsi <= self.config.max_mmsi)
+        valid_mask = (
+            ((mmsi >= self.config.min_mmsi) & (mmsi <= self.config.max_mmsi))
+            | pd.notna(special_types)
+        )
         df = df[valid_mask].copy()
         self.report["mmsi_removed"] = n - len(df)
 

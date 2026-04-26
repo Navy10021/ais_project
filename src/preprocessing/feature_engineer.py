@@ -23,12 +23,26 @@ import logging
 import argparse
 import yaml
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 SEED = 42
 np.random.seed(SEED)
+
+
+def _expand_type_range(
+    value: Optional[list[int]], default_start: int, default_end: int
+) -> list[int]:
+    """Convert [start, end] config ranges to explicit inclusive code lists."""
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        lo, hi = value
+        if isinstance(lo, (int, float)) and isinstance(hi, (int, float)):
+            lo_i, hi_i = int(lo), int(hi)
+            if lo_i > hi_i:
+                lo_i, hi_i = hi_i, lo_i
+            return list(range(lo_i, hi_i + 1))
+    return list(range(default_start, default_end + 1))
 
 
 @dataclass
@@ -37,6 +51,12 @@ class FeatureConfig:
     time_bucket: str = "6h"
     rolling_window: str = "12h"
     dark_ship_threshold_seconds: int = 21600
+    conflict_zones: Optional[Dict[str, Dict[str, object]]] = None
+    chokepoints: Optional[Dict[str, Tuple[float, float]]] = None
+    vessel_type_military: int = 35
+    vessel_type_sar: int = 51
+    vessel_type_cargo: Optional[list[int]] = None
+    vessel_type_tanker: Optional[list[int]] = None
 
 
 def load_config(config_path: str = "./config/settings.yaml") -> FeatureConfig:
@@ -45,6 +65,9 @@ def load_config(config_path: str = "./config/settings.yaml") -> FeatureConfig:
         with open(config_path) as f:
             config = yaml.safe_load(f)
         ft = config.get("features", {})
+        zones = config.get("conflict_zones", {}) or {}
+        chokepoints = config.get("chokepoints", {}) or {}
+        vessel_types = config.get("vessel_types", {}) or {}
         return FeatureConfig(
             grid_resolution=ft.get("grid_resolution", 0.5),
             time_bucket=ft.get("time_bucket", "6h"),
@@ -52,6 +75,12 @@ def load_config(config_path: str = "./config/settings.yaml") -> FeatureConfig:
             dark_ship_threshold_seconds=ft.get(
                 "dark_ship_threshold_seconds", 21600
             ),
+            conflict_zones=zones,
+            chokepoints={k: tuple(v) for k, v in chokepoints.items()},
+            vessel_type_military=vessel_types.get("military", 35),
+            vessel_type_sar=vessel_types.get("sar", 51),
+            vessel_type_cargo=_expand_type_range(vessel_types.get("cargo"), 70, 79),
+            vessel_type_tanker=_expand_type_range(vessel_types.get("tanker"), 80, 89),
         )
     except Exception:
         logger.warning(
@@ -61,7 +90,11 @@ def load_config(config_path: str = "./config/settings.yaml") -> FeatureConfig:
 
 
 class AISFeatureEngineer:
-    CONFLICT_ZONES = {
+    REQUIRED_COLUMNS = {
+        "MMSI", "BaseDateTime", "LAT", "LON", "SOG", "COG", "Heading", "VesselType"
+    }
+
+    DEFAULT_CONFLICT_ZONES = {
         "black_sea": {"bbox": [27.0, 40.5, 41.0, 46.8], "conflict": "ukraine_war"},
         "azov_sea": {"bbox": [33.5, 45.0, 39.5, 47.5], "conflict": "ukraine_war"},
         "kerch_strait": {"bbox": [36.4, 45.1, 36.8, 45.5], "conflict": "ukraine_war"},
@@ -72,7 +105,7 @@ class AISFeatureEngineer:
         "strait_hormuz": {"bbox": [56.0, 25.5, 59.5, 27.0], "conflict": "iran_tension"},
     }
 
-    CHOKEPOINTS = {
+    DEFAULT_CHOKEPOINTS = {
         "hormuz": (56.5, 26.5),
         "malacca": (103.8, 1.2),
         "bab_mandeb": (43.4, 12.5),
@@ -82,15 +115,22 @@ class AISFeatureEngineer:
         "dover": (1.3, 51.0),
     }
 
-    VESSEL_TYPE_MILITARY = 35
-    VESSEL_TYPE_SAR = 51
-    VESSEL_TYPE_CARGO = list(range(70, 80))
-    VESSEL_TYPE_TANKER = list(range(80, 90))
+    DEFAULT_VESSEL_TYPE_MILITARY = 35
+    DEFAULT_VESSEL_TYPE_SAR = 51
+    DEFAULT_VESSEL_TYPE_CARGO = list(range(70, 80))
+    DEFAULT_VESSEL_TYPE_TANKER = list(range(80, 90))
 
     def __init__(self, config: Optional[FeatureConfig] = None):
         self.config = config or load_config()
+        self.conflict_zones = self.config.conflict_zones or self.DEFAULT_CONFLICT_ZONES
+        self.chokepoints = self.config.chokepoints or self.DEFAULT_CHOKEPOINTS
+        self.vessel_type_military = self.config.vessel_type_military
+        self.vessel_type_sar = self.config.vessel_type_sar
+        self.vessel_type_cargo = self.config.vessel_type_cargo or self.DEFAULT_VESSEL_TYPE_CARGO
+        self.vessel_type_tanker = self.config.vessel_type_tanker or self.DEFAULT_VESSEL_TYPE_TANKER
 
     def add_kinematic_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        self._validate_columns(df)
         df = df.sort_values(["MMSI", "BaseDateTime"]).copy()
 
         df["speed_category"] = pd.cut(
@@ -124,6 +164,11 @@ class AISFeatureEngineer:
 
         return df
 
+    def _validate_columns(self, df: pd.DataFrame) -> None:
+        missing = sorted(self.REQUIRED_COLUMNS.difference(df.columns))
+        if missing:
+            raise ValueError(f"Missing required feature columns: {missing}")
+
     def add_geospatial_features(self, df: pd.DataFrame) -> pd.DataFrame:
         res = self.config.grid_resolution
 
@@ -139,7 +184,7 @@ class AISFeatureEngineer:
         lon_vals = df["LON"].values
         lat_vals = df["LAT"].values
 
-        for zone, info in self.CONFLICT_ZONES.items():
+        for zone, info in self.conflict_zones.items():
             b = info["bbox"]
             mask = (
                 (lon_vals >= b[0]) & (lon_vals <= b[2]) &
@@ -151,7 +196,7 @@ class AISFeatureEngineer:
         df["in_conflict_zone"] = in_zone
         df["conflict_zone_name"] = zone_names
 
-        for name, (cp_lon, cp_lat) in self.CHOKEPOINTS.items():
+        for name, (cp_lon, cp_lat) in self.chokepoints.items():
             df[f"dist_{name}_km"] = self._haversine(
                 df["LAT"], df["LON"], cp_lat, cp_lon
             )
@@ -197,14 +242,17 @@ class AISFeatureEngineer:
             df["in_conflict_zone"]
         ).astype("int8")
 
-        cog_sign = np.sign(df["delta_cog"].fillna(0).values)
         df["zig_zag_index"] = (
             df.groupby("MMSI")["delta_cog"]
             .transform(
                 lambda x: (
                     np.sign(x.fillna(0).values) != np.sign(x.shift().fillna(0).values)
                 ).astype(int)
-            ).rolling(10, min_periods=3).sum()
+            )
+            .groupby(df["MMSI"])
+            .rolling(10, min_periods=3)
+            .sum()
+            .reset_index(level=0, drop=True)
         )
 
         return df
@@ -221,10 +269,10 @@ class AISFeatureEngineer:
             "mean_sog": ("SOG", "mean"),
             "std_sog": ("SOG", "std"),
             "loitering_density": ("loitering_flag", "sum"),
-            "military_count": ("VesselType", lambda x: (x == self.VESSEL_TYPE_MILITARY).sum()),
-            "cargo_count": ("VesselType", lambda x: x.isin(self.VESSEL_TYPE_CARGO).sum()),
-            "tanker_count": ("VesselType", lambda x: x.isin(self.VESSEL_TYPE_TANKER).sum()),
-            "sar_count": ("VesselType", lambda x: (x == self.VESSEL_TYPE_SAR).sum()),
+            "military_count": ("VesselType", lambda x: (x == self.vessel_type_military).sum()),
+            "cargo_count": ("VesselType", lambda x: x.isin(self.vessel_type_cargo).sum()),
+            "tanker_count": ("VesselType", lambda x: x.isin(self.vessel_type_tanker).sum()),
+            "sar_count": ("VesselType", lambda x: (x == self.vessel_type_sar).sum()),
         }
 
         agg = df.groupby(["grid_cell", "time_bucket"]).agg(**agg_dict).reset_index()
@@ -263,12 +311,11 @@ class AISFeatureEngineer:
                 if not zone_mask.any():
                     continue
 
-                event_date = ev["event_date"]
+                event_date = pd.Timestamp(ev["event_date"])
                 if event_date.tzinfo is None:
                     event_date = event_date.tz_localize("UTC")
 
-                dt_naive = df["BaseDateTime"].dt.tz_localize(None)
-                day_diff = (event_date - dt_naive).dt.days
+                day_diff = (event_date - df["BaseDateTime"]).dt.days
 
                 match = zone_mask & (day_diff >= -7) & (day_diff <= 30)
                 df.loc[match, "conflict_label"] = 1
