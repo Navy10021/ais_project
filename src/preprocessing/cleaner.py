@@ -24,7 +24,7 @@ import logging
 import argparse
 import yaml
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,12 @@ def load_config(config_path: str = "./config/settings.yaml") -> CleanerConfig:
 
 
 class AISCleaner:
+    REQUIRED_COLUMNS = {
+        "MMSI", "BaseDateTime", "LAT", "LON", "SOG", "COG", "Heading",
+        "VesselName", "IMO", "CallSign", "VesselType", "Status",
+        "Length", "Width", "Draft", "Cargo", "TransceiverClass",
+    }
+
     DTYPE_MAP = {
         "MMSI": "int64",
         "LAT": "float32",
@@ -128,13 +134,22 @@ class AISCleaner:
 
     def load(self) -> pd.DataFrame:
         if self.input_path.suffix == ".parquet":
-            return pd.read_parquet(self.input_path)
-        return pd.read_csv(
+            df = pd.read_parquet(self.input_path)
+            self._validate_columns(df)
+            return df
+        df = pd.read_csv(
             self.input_path,
             dtype=self.DTYPE_MAP,
             parse_dates=["BaseDateTime"],
             low_memory=False,
         )
+        self._validate_columns(df)
+        return df
+
+    def _validate_columns(self, df: pd.DataFrame) -> None:
+        missing = sorted(self.REQUIRED_COLUMNS.difference(df.columns))
+        if missing:
+            raise ValueError(f"Missing required AIS columns: {missing}")
 
     def clean_mmsi(self, df: pd.DataFrame) -> pd.DataFrame:
         n = len(df)

@@ -35,8 +35,13 @@ def _expand_type_range(
     value: Optional[list[int]], default_start: int, default_end: int
 ) -> list[int]:
     """Convert [start, end] config ranges to explicit inclusive code lists."""
-    if isinstance(value, list) and len(value) == 2 and all(isinstance(v, int) for v in value):
-        return list(range(value[0], value[1] + 1))
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        lo, hi = value
+        if isinstance(lo, (int, float)) and isinstance(hi, (int, float)):
+            lo_i, hi_i = int(lo), int(hi)
+            if lo_i > hi_i:
+                lo_i, hi_i = hi_i, lo_i
+            return list(range(lo_i, hi_i + 1))
     return list(range(default_start, default_end + 1))
 
 
@@ -85,6 +90,10 @@ def load_config(config_path: str = "./config/settings.yaml") -> FeatureConfig:
 
 
 class AISFeatureEngineer:
+    REQUIRED_COLUMNS = {
+        "MMSI", "BaseDateTime", "LAT", "LON", "SOG", "COG", "Heading", "VesselType"
+    }
+
     DEFAULT_CONFLICT_ZONES = {
         "black_sea": {"bbox": [27.0, 40.5, 41.0, 46.8], "conflict": "ukraine_war"},
         "azov_sea": {"bbox": [33.5, 45.0, 39.5, 47.5], "conflict": "ukraine_war"},
@@ -121,6 +130,7 @@ class AISFeatureEngineer:
         self.vessel_type_tanker = self.config.vessel_type_tanker or self.DEFAULT_VESSEL_TYPE_TANKER
 
     def add_kinematic_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        self._validate_columns(df)
         df = df.sort_values(["MMSI", "BaseDateTime"]).copy()
 
         df["speed_category"] = pd.cut(
@@ -153,6 +163,11 @@ class AISFeatureEngineer:
         )
 
         return df
+
+    def _validate_columns(self, df: pd.DataFrame) -> None:
+        missing = sorted(self.REQUIRED_COLUMNS.difference(df.columns))
+        if missing:
+            raise ValueError(f"Missing required feature columns: {missing}")
 
     def add_geospatial_features(self, df: pd.DataFrame) -> pd.DataFrame:
         res = self.config.grid_resolution

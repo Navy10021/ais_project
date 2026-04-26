@@ -88,3 +88,9 @@ class TestAISCleaner:
 
         has_special = result["mmsi_special_type"].notna()
         assert has_special.any(), "Special MMSI types should be detected in data"
+
+    def test_validate_columns_raises_on_missing(self, sample_ais_data):
+        cleaner = AISCleaner("dummy_input.csv", "dummy_output.parquet")
+        broken = sample_ais_data.drop(columns=["MMSI"])
+        with pytest.raises(ValueError, match="Missing required AIS columns"):
+            cleaner._validate_columns(broken)

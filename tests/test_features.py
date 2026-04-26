@@ -5,7 +5,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from src.preprocessing.feature_engineer import AISFeatureEngineer, load_config
+from src.preprocessing.feature_engineer import AISFeatureEngineer, load_config, _expand_type_range
 
 
 @pytest.fixture
@@ -28,6 +28,11 @@ def sample_clean_data():
 
 
 class TestAISFeatureEngineer:
+    def test_expand_type_range_handles_reversed_bounds(self):
+        expanded = _expand_type_range([79, 70], 70, 79)
+        assert expanded[0] == 70
+        assert expanded[-1] == 79
+
     def test_config_driven_metadata_loaded(self):
         config = load_config("./config/settings.yaml")
         engineer = AISFeatureEngineer(config)
@@ -46,6 +51,12 @@ class TestAISFeatureEngineer:
         assert "time_diff_sec" in result.columns
         assert "is_dark_ship" in result.columns
         assert result["speed_category"].notna().any()
+
+    def test_validate_columns_raises_on_missing(self, sample_clean_data):
+        engineer = AISFeatureEngineer()
+        broken = sample_clean_data.drop(columns=["SOG"])
+        with pytest.raises(ValueError, match="Missing required feature columns"):
+            engineer.add_kinematic_features(broken)
 
     def test_geospatial_features(self, sample_clean_data):
         engineer = AISFeatureEngineer()
