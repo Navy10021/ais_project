@@ -174,9 +174,10 @@ class AISFeatureEngineer:
         df["_date"] = df["BaseDateTime"].dt.date
 
         def _entropy(s: pd.Series) -> float:
-            if len(s) < 2:
+            valid = s.dropna()
+            if len(valid) < 2:
                 return np.nan
-            bins = pd.cut(s.dropna(), bins=36, labels=False)
+            bins = pd.cut(valid, bins=36, labels=False)
             if len(bins) < 2:
                 return np.nan
             p = bins.value_counts(normalize=True) + 1e-10
@@ -202,8 +203,8 @@ class AISFeatureEngineer:
             .transform(
                 lambda x: (
                     np.sign(x.fillna(0).values) != np.sign(x.shift().fillna(0).values)
-                ).rolling(10, min_periods=3).sum()
-            )
+                ).astype(int)
+            ).rolling(10, min_periods=3).sum()
         )
 
         return df
@@ -220,25 +221,13 @@ class AISFeatureEngineer:
             "mean_sog": ("SOG", "mean"),
             "std_sog": ("SOG", "std"),
             "loitering_density": ("loitering_flag", "sum"),
+            "military_count": ("VesselType", lambda x: (x == self.VESSEL_TYPE_MILITARY).sum()),
+            "cargo_count": ("VesselType", lambda x: x.isin(self.VESSEL_TYPE_CARGO).sum()),
+            "tanker_count": ("VesselType", lambda x: x.isin(self.VESSEL_TYPE_TANKER).sum()),
+            "sar_count": ("VesselType", lambda x: (x == self.VESSEL_TYPE_SAR).sum()),
         }
 
         agg = df.groupby(["grid_cell", "time_bucket"]).agg(**agg_dict).reset_index()
-
-        agg["military_count"] = df.groupby(
-            ["grid_cell", "time_bucket"]
-        )["VesselType"].apply(lambda x: (x == self.VESSEL_TYPE_MILITARY).sum())
-
-        agg["cargo_count"] = df.groupby(
-            ["grid_cell", "time_bucket"]
-        )["VesselType"].apply(lambda x: x.isin(self.VESSEL_TYPE_CARGO).sum())
-
-        agg["tanker_count"] = df.groupby(
-            ["grid_cell", "time_bucket"]
-        )["VesselType"].apply(lambda x: x.isin(self.VESSEL_TYPE_TANKER).sum())
-
-        agg["sar_count"] = df.groupby(
-            ["grid_cell", "time_bucket"]
-        )["VesselType"].apply(lambda x: (x == self.VESSEL_TYPE_SAR).sum())
 
         denom = agg["traffic_count"].clip(lower=1).values
         agg["dark_ship_ratio"] = agg["dark_ship_count"].values / denom
