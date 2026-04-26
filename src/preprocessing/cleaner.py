@@ -60,6 +60,7 @@ def load_config(config_path: str = "./config/settings.yaml") -> CleanerConfig:
             invalid_sog=pp.get("invalid_sog", 102.3),
             invalid_cog=pp.get("invalid_cog", 360.0),
             invalid_heading=pp.get("invalid_heading", 511),
+            invalid_imo=pp.get("invalid_imo", "IMO0000000"),
             timestamp_cutoff=pp.get("timestamp_cutoff", "2010-01-01"),
         )
     except Exception:
